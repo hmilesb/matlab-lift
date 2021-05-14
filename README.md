@@ -11,4 +11,4 @@ Parts:
 
 Inports/Outports Structure:
 ...
-How does a 
+How do the models interact with oneanother???
