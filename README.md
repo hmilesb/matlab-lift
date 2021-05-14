@@ -8,3 +8,7 @@ Parts:
 - Stateflow state model
 - App ui interface
 - 3d model?
+
+Inports/Outports Structure:
+...
+How does a 
