@@ -12,3 +12,5 @@ Parts:
 Inports/Outports Structure:
 ...
 How do the models interact with oneanother???
+
+Outside display of the lift must have the up/down arrows to let the user know the status of the lift. 
