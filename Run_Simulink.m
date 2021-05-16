@@ -1,4 +1,4 @@
-Req_Floor = 4;
+Req_Floor = 5;
 Cur_Floor = 0;
 Door = [];
 simin = [Req_Floor];
