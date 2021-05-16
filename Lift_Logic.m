@@ -1,1 +1,1 @@
-UpDownReqSort = sort(abs(UpDownReq),1)
+UpDownReqSort = sort(UpDownReq,1)
