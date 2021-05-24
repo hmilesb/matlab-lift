@@ -9,16 +9,17 @@ passengerMatrix = []; % 2D Array
 
 global maxPassengers
 maxPassengers = 10;
-
-testValue = liftCall(10,-1,-1,5,1)
-testValue = liftCall(6,-1,-1,5,1)
-testValue = liftCall(4,-1,-1,5,1)
-testValue = liftCall(2,1,-1,5,1)
-testValue = liftCall(7,1,-1,5,1)
-
-liftCall(9,1,0,3,0)
-
-testValue = liftCall(8,1,1,4,9)
+testValue = liftCall(0,0,0,0,0)
+% 
+% testValue = liftCall(10,-1,-1,5,1)
+% testValue = liftCall(6,-1,-1,5,1)
+% testValue = liftCall(4,-1,-1,5,1)
+% testValue = liftCall(2,1,-1,5,1)
+% testValue = liftCall(7,1,-1,5,1)
+% 
+% liftCall(9,1,0,3,0)
+% 
+% testValue = liftCall(8,1,1,4,9)
 
 
 
