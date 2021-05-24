@@ -5,10 +5,10 @@
 
 %% Init. Variables and Data
 global passengerMatrix
-passengerMatrix = [] % 2D Array
+passengerMatrix = []; % 2D Array
 
 global maxPassengers
-maxPassengers = 10
+maxPassengers = 10;
 
 testValue = liftCall(10,-1,-1,5,1)
 testValue = liftCall(6,-1,-1,5,1)
@@ -50,12 +50,12 @@ function nextFloor = liftCall(Floor,Direction,liftDirection,liftPosition,liftDes
     if size(passengerMatrix,1) == 0
         passengerMatrix = passenger;
     else
-        passengerMatrix = [passengerMatrix; passenger]
+        passengerMatrix = [passengerMatrix; passenger];
     end
     
     % Checks if request is en-route and that there is no urgent passenger
     
-    overtimeFloor = overtimeCheck()
+    overtimeFloor = overtimeCheck();
     
     nextFloor = 0;
     
@@ -83,17 +83,17 @@ function nextFloor = liftCall(Floor,Direction,liftDirection,liftPosition,liftDes
     % picked up
     global maxPassengers
     if nextFloor == Floor
-        tempCounter = 0
-        currentPassengers = 0
+        tempCounter = 0;
+        currentPassengers = 0;
         for j = 1:size(passengerMatrix,1)
             passengerMatrix(j,4)
             if double(passengerMatrix(j,4)) ~= 0
-                currentPassengers = currentPassengers + 1
+                currentPassengers = currentPassengers + 1;
             end
             if double(passengerMatrix(j,5)) == Floor
-                tempCounter = tempCounter - 1
+                tempCounter = tempCounter - 1;
             elseif double(passengerMatrix(j,1)) == Floor
-                tempCounter = tempCounter + 1
+                tempCounter = tempCounter + 1;
             end
         end
         if currentPassengers + tempCounter > maxPassengers
