@@ -38,7 +38,7 @@ testValue = liftCall(8,1,1,4,9)
 function nextFloor = liftCall(Floor,Direction,liftDirection,liftPosition,liftDestination) % nextFloor changes from existing if redirection to be done
     % Generates New User ID in the Passenger Matrix
     avgFloor = 0;
-    if Direction == "Up"
+    if Direction == 1
         avgFloor = round(((10 - Floor)/2) + Floor);
     else
         avgFloor = round(Floor / 2);
