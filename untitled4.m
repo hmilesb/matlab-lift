@@ -1,5 +1,25 @@
-testValue = liftCall(3,1,0,1,1)
-testValue2 = liftStopped(2.0095,6)
+global passengerMatrix
+passengerMatrix = [];
+global maxPassengers
+maxPassengers = 10;
+%%
+
+testValue = liftCall(7,1,0,5,1)
+testValue = liftCall(7,1,0,5,1)
+testValue = liftCall(7,1,0,5,1)
+testvalue2 = liftStopped(7,[8 9 10])
+testValue2 = liftStopped(8,[9 10])
+
+% 
+% testValue = liftCall(3,1,0,1,1)
+% testValue = liftCall(5,1,1,2.2,3)
+% testValue2 = liftStopped(3,7)
+% testValue2 = liftStopped(5,8)
+
+
+% testValue2 = liftStopped(7,
+% testValue2 = liftStopped(7,2)
+% testValue2 = liftStopped(2.0095,6)
 
 %%
 function nextFloor = liftCall(Floor, Direction, liftDirection, liftPosition, liftDestination) % nextFloor changes from existing if redirection to be done
@@ -68,10 +88,10 @@ function nextFloor = liftCall(Floor, Direction, liftDirection, liftPosition, lif
                 end
             end
             %             app.chart.nextFloor = nextFloor;
-            app.chart.Req_Floor = nextFloor;
-            app.ReqFloor = nextFloor;
-            app.nextFloor = nextFloor;
-            app.NextFloor.Value = string(nextFloor);
+%             app.chart.Req_Floor = nextFloor;
+%             app.ReqFloor = nextFloor;
+%             app.nextFloor = nextFloor;
+%             app.NextFloor.Value = string(nextFloor);
             fprintf(2,"nextFloor = " + string(nextFloor))
             fprintf(2, "___________")
             %             disp(passengerMatrix);
@@ -180,7 +200,7 @@ function bestNextFloor = liftStopped(liftFloor, buttonPressed)% buttonPressed = 
                     end
 
                     sortedJobs = unique(sort(double(currentJobArray))); % Sorts array and removes duplicates for Up
-                    startIndex = find(double(unique(sort([currentJobArray floorTemp]))) == double(floorTemp)) %%CHANGES THESE IN BELOW FOR GOING DOWN, FLIP SORT
+                    startIndex = find(double(unique(sort([currentJobArray floorTemp]))) == double(floorTemp)); %%CHANGES THESE IN BELOW FOR GOING DOWN, FLIP SORT
                     %                     "here"
 
                     currentJobArray = [];
@@ -200,7 +220,7 @@ function bestNextFloor = liftStopped(liftFloor, buttonPressed)% buttonPressed = 
                     locationArray = [];
 
                     if startIndex > length(inuseArray)
-                        startIndex = length(inuseArray)
+                        startIndex = length(inuseArray);
                     end
 
                     while (ismember(1,passengerDone()) == 1 || ismember(2,passengerDone())); % While there is still demand
@@ -212,9 +232,9 @@ function bestNextFloor = liftStopped(liftFloor, buttonPressed)% buttonPressed = 
                                 if double(passengerMatrix(j,4)) ~= 0
                                     currentPassengers = currentPassengers + 1;
                                 end
-                                sortedJobs
-                                sortedJobs2
-                                startIndex
+                                sortedJobs;
+                                sortedJobs2;
+                                startIndex;
                                 if double(passengerMatrix(j,5)) == inuseArray(startIndex)
                                     tempCounter = tempCounter - 1;
                                 elseif double(passengerMatrix(j,1)) == inuseArray(startIndex)
@@ -313,14 +333,14 @@ function bestNextFloor = liftStopped(liftFloor, buttonPressed)% buttonPressed = 
                     inuseArray = sortedJobs;
                     locationArray = [];
                     if startIndex > length(inuseArray)
-                        startIndex = length(inuseArray)
+                        startIndex = length(inuseArray);
                     end
 
                     while ismember(1,passengerDone()) == 1 || ismember(2,passengerDone()) % While there is still demand
                         global maxPassengers % Checks again for passenger overload
                         tempCounter = 0;
                         currentPassengers = 0;
-                        startIndex
+                        startIndex;
                         if startIndex <= length(inuseArray) && startIndex > 0
                             for j = 1:size(passengerMatrix,1)
                                 if double(passengerMatrix(j,4)) ~= 0
@@ -401,7 +421,7 @@ function bestNextFloor = liftStopped(liftFloor, buttonPressed)% buttonPressed = 
                 sortUp(1)
                 bestNextFloor = locationArrayUp(find(timeArrayUp == sortUp(1))); % Extracts the index of the best next floor
             else
-                timeArrayDown
+                timeArrayDown;
                 find(timeArrayDown == sortDown(1))
                 bestNextFloor = locationArrayDown(find(timeArrayDown == sortDown(1)));
                 if length(bestNextFloor) > 1
