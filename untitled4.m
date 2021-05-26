@@ -4,17 +4,17 @@ global maxPassengers
 maxPassengers = 10;
 %%
 
-testValue = liftCall(7,1,0,5,1)
-testValue = liftCall(7,1,0,5,1)
-testValue = liftCall(7,1,0,5,1)
-testvalue2 = liftStopped(7,[8 9 10])
-testValue2 = liftStopped(8,[9 10])
+% testValue = liftCall(7,1,0,5,1)
+% testValue = liftCall(7,1,0,5,1)
+% testValue = liftCall(7,1,0,5,1)
+% testvalue2 = liftStopped(7,[8 9 10])
+% testValue2 = liftStopped(8,[9 10])
 
 % 
-% testValue = liftCall(3,1,0,1,1)
-% testValue = liftCall(5,1,1,2.2,3)
-% testValue2 = liftStopped(3,7)
-% testValue2 = liftStopped(5,8)
+testValue = liftCall(3,1,0,1,1)
+testValue = liftCall(5,1,1,2.2,3)
+testValue2 = liftStopped(3,7)
+testValue2 = liftStopped(5,6)
 
 
 % testValue2 = liftStopped(7,
