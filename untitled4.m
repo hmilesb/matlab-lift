@@ -1,20 +1,38 @@
 global passengerMatrix
-passengerMatrix = [];
+% passengerMatrix = [];
 global maxPassengers
 maxPassengers = 10;
 %%
-
+% % 
 % testValue = liftCall(7,1,0,5,1)
 % testValue = liftCall(7,1,0,5,1)
 % testValue = liftCall(7,1,0,5,1)
 % testvalue2 = liftStopped(7,[8 9 10])
-% testValue2 = liftStopped(8,[9 10])
+% testValue2 = liftStopped(8,0)
 
 % 
-testValue = liftCall(3,1,0,1,1)
-testValue = liftCall(5,1,1,2.2,3)
-testValue2 = liftStopped(3,7)
-testValue2 = liftStopped(5,6)
+% testValue = liftCall(3,1,0,1,0)
+% testValue = liftCall(6,1,1,2.2,3)
+% testValue2 = liftStopped(3,7)
+% testValue2 = liftStopped(5,6)
+% 
+
+% value = liftCall(3,-1,0,0,5);
+% value = liftCall(2,-1,-1,4,3);
+% value = liftStopped(3,1);
+
+% testvalue = liftCall(3,-1,0,0,1)
+% testvalue = liftStopped(3,1)
+% testvalue = liftCall(5,1,-1,2,1)
+% testvalue = liftStopped(1,0)
+
+% testvalue = liftCall(3,-1,0,1,0)
+% testvalue = liftCall(3,-1,0,1,0)
+% testvalue = liftStopped(3,[1 2])
+% testvalue = liftStopped(2,0)
+testvalue = liftStopped(1,0)
+
+%No floor is going to be input here because people are getting off
 
 
 % testValue2 = liftStopped(7,
@@ -22,6 +40,7 @@ testValue2 = liftStopped(5,6)
 % testValue2 = liftStopped(2.0095,6)
 
 %%
+
 function nextFloor = liftCall(Floor, Direction, liftDirection, liftPosition, liftDestination) % nextFloor changes from existing if redirection to be done
             global passengerMatrix
             global maxPassengers
