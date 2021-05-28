@@ -1,19 +1,7 @@
 # matlab-lift
-matlab lift group project
+This is the GitHub Repository for Group Y4, ES2D7 - Systems and Software Principles - Lift Project. 
 
-Hello this is the github for the matlab lift group project
+To run the final model with app interface go to "/Final_Project_Files/Simulink_model.slx". Run the Simulink_Model.slx and the App Interface will open automatically.
 
-Parts:
-- Simulink model
-- Stateflow state model
-- App ui interface
-- 3d model?
+MATLAB 2021a is required to run the functioning model. 
 
-Inports/Outports Structure:
-...
-How do the models interact with oneanother???
-MP: Oh these might be useful: https://uk.mathworks.com/help/stateflow/ug/sf4ml-lamp-example.html
-https://uk.mathworks.com/help/stateflow/ug/SF4ML-fitness-tracker.html
-
-
-Outside display of the lift must have the up/down arrows to let the user know the status of the lift. 
