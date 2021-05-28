@@ -1,0 +1,1514 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[classdef AppWSimulink < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure                    matlab.ui.Figure
+        DoorSwitch                  matlab.ui.control.RockerSwitch
+        DoorSwitchLabel             matlab.ui.control.Label
+        SensorValueEditField        matlab.ui.control.NumericEditField
+        SensorValueEditFieldLabel   matlab.ui.control.Label
+        AccelerationEditField       matlab.ui.control.NumericEditField
+        AccelerationEditFieldLabel  matlab.ui.control.Label
+        VelocityEditField           matlab.ui.control.NumericEditField
+        VelocityEditFieldLabel      matlab.ui.control.Label
+        PositionEditField           matlab.ui.control.NumericEditField
+        PositionEditFieldLabel      matlab.ui.control.Label
+        Slider                      matlab.ui.control.Slider
+        MovementSwitch              matlab.ui.control.RockerSwitch
+        MovementSwitchLabel         matlab.ui.control.Label
+        FaultStateLamp              matlab.ui.control.Lamp
+        FaultStateLampLabel         matlab.ui.control.Label
+        MovingLamp                  matlab.ui.control.Lamp
+        MovingLampLabel             matlab.ui.control.Label
+        NormalOperationLamp         matlab.ui.control.Lamp
+        NormalOperationLampLabel    matlab.ui.control.Label
+        TextArea_7                  matlab.ui.control.TextArea
+        TextArea_6                  matlab.ui.control.TextArea
+        NextFloor                   matlab.ui.control.TextArea
+        TestButton                  matlab.ui.control.Button
+        DoorPushTextArea            matlab.ui.control.TextArea
+        DoorPushTextAreaLabel       matlab.ui.control.Label
+        TextArea_5                  matlab.ui.control.TextArea
+        TextArea_4                  matlab.ui.control.TextArea
+        DirectionDown               matlab.ui.control.Button
+        DirectionUp                 matlab.ui.control.Button
+        Gauge                       matlab.ui.control.SemicircularGauge
+        P1Button                    matlab.ui.control.Button
+        GButton                     matlab.ui.control.Button
+        AlarmStopButton             matlab.ui.control.Button
+        AlarmStartButton            matlab.ui.control.Button
+        resumeButton                matlab.ui.control.Button
+        pauseButton                 matlab.ui.control.Button
+        StopButton                  matlab.ui.control.Button
+        StartButton                 matlab.ui.control.Button
+        TestText                    matlab.ui.control.EditField
+        TestTextLabel               matlab.ui.control.Label
+        TextArea_3                  matlab.ui.control.TextArea
+        ObjectDetectionButton       matlab.ui.control.Button
+        Ext_User_Display            matlab.ui.control.EditField
+        DoorStatusTextArea          matlab.ui.control.TextArea
+        DoorStatusTextAreaLabel     matlab.ui.control.Label
+        Door_Open                   matlab.ui.control.Button
+        Door_Close                  matlab.ui.control.Button
+        FloorSpinner                matlab.ui.control.Spinner
+        FloorSpinnerLabel           matlab.ui.control.Label
+        NoPassengersSpinner         matlab.ui.control.Spinner
+        NoPassengersSpinnerLabel    matlab.ui.control.Label
+        Lamp_2                      matlab.ui.control.Lamp
+        DOWNButton                  matlab.ui.control.Button
+        UPButton                    matlab.ui.control.Button
+        NormalOperationButton       matlab.ui.control.Button
+        TextArea_2                  matlab.ui.control.TextArea
+        TextArea                    matlab.ui.control.TextArea
+        Lamp                        matlab.ui.control.Lamp
+        MOVINGButton                matlab.ui.control.Button
+        STOPButton                  matlab.ui.control.Button
+        Button_9                    matlab.ui.control.Button
+        Button_8                    matlab.ui.control.Button
+        Button_7                    matlab.ui.control.Button
+        Button_6                    matlab.ui.control.Button
+        Button_5                    matlab.ui.control.Button
+        Button_4                    matlab.ui.control.Button
+        Button_3                    matlab.ui.control.Button
+        Button_2                    matlab.ui.control.Button
+        CurrentFloorEditField       matlab.ui.control.EditField
+        CurrentFloorEditFieldLabel  matlab.ui.control.Label
+        FloorGauge                  matlab.ui.control.Gauge
+    end
+
+
+    properties (Access = private)
+        chart % Description
+        ObjectDetected;
+        ReqFloor;
+        liftCallDirection;
+        Counter;
+        FloorCounter;
+        nextFloor;
+        liftButtons;
+
+        %       Audio Properties
+        LM; % Lift_music
+        Floor_1; % First floor
+        AB;     % alarm bell
+        DoorsOp; % Doors Opening
+        DoorsCl; % Doors Closing
+        Floor; % Floor
+        AOne; % One
+        ATwo; AThree; AFour; AFive; ASix; ASeven; AEight;
+        AEmg;
+    end
+
+    methods (Access = public)
+
+        function updateCounter(app, Cur_Floor, moving, DoorOperation)
+            app.CurrentFloorEditField.Value = string(Cur_Floor);
+            app.FloorGauge.Value = Cur_Floor;
+            app.Gauge.Value = Cur_Floor;
+            app.Ext_User_Display.Value = string(round(Cur_Floor));
+            
+            app.PositionEditField.Value = Cur_Floor*3;
+            app.VelocityEditField.Value = app.chart.Velocity;
+
+            if moving == 1 % when moving the light should be on
+                app.Lamp.Enable = 'on';
+                app.DirectionUp.Visible = 1;
+                app.DirectionDown.Visible =0 ;
+            elseif moving == 2
+                app.Lamp.Enable = 1;
+                app.DirectionDown.Visible = 1;
+                app.DirectionUp.Visible = 0;
+            else
+                app.Lamp.Enable = 'off';
+                app.DirectionDown.Visible = 0;
+                app.DirectionUp.Visible = 0;
+            end
+
+            if DoorOperation == 1
+                pause(app.LM);
+                %                 play(app.Floor_1);
+            else
+                %                 stop(app.Floor_1);
+                resume(app.LM);
+                app.FloorCounter = 0;
+
+            end
+
+
+        end
+
+        function DetectObject(app)
+            if app.ObjectDetected == 1
+                app.chart.ObjectDetected = 1;
+                app.TestText.Value = "1";
+            else
+                app.chart.ObjectDetected = 0;
+                app.TestText.Value = "0";
+            end
+        end
+
+        function Logic(app,NxFloor)
+            app.chart.Req_Floor = NxFloor;
+            app.ReqFloor = NxFloor;
+        end
+
+        function updateDoorStatus(app, Status, Cur_Floor, ArriveFloor)
+            if ArriveFloor == 1
+                if app.FloorCounter == 0
+                    app.FloorCounter = 1;
+                    playblocking(app.Floor);
+                    if (round(Cur_Floor) == 1)
+                        playblocking(app.AOne);
+                    elseif round(Cur_Floor) == 2
+                        playblocking(app.ATwo);
+                    elseif round(Cur_Floor) == 3
+                        playblocking(app.AThree);
+                    elseif round(Cur_Floor) == 4
+                        playblocking(app.AFour);
+                    elseif round(Cur_Floor) == 5
+                        playblocking(app.AFive);
+                    elseif round(Cur_Floor) == 6
+                        playblocking(app.ASix);
+                    elseif round(Cur_Floor) == 7
+                        playblocking(app.ASeven);
+                    elseif round(Cur_Floor) == 8
+                        playblocking(app.AEight);
+                    end
+                    disp("app.FloorCounter = " + string(app.FloorCounter))
+                end
+            end
+
+            if Status == 0 %&& ObjectDetected == 0
+                app.DoorStatusTextArea.Value = "Doors Opening";
+                disp("Doors Opening")
+                disp("app.Counter = "+ string(app.Counter))
+                if app.Counter == 0
+                    play(app.DoorsOp);
+                    app.Counter = 1;
+                    disp("here")
+                end
+            elseif Status == 1 %&& ObjectDetected == 0
+                app.DoorStatusTextArea.Value = "Door Open";
+                app.Counter = 0;
+            elseif Status == 2 %&& ObjectDetected == 0
+                app.DoorStatusTextArea.Value = "Door Closing";
+                if app.Counter == 0
+                    play(app.DoorsCl)
+                    app.Counter = 1;
+                end
+            elseif Status == 3
+                app.DoorStatusTextArea.Value = "Door Closed";
+                app.Counter = 0;
+            else
+                app.DoorStatusTextArea.Value = "Error";
+            end
+
+            if Status == 2 || Status == 1 || Status == 0
+                app.ObjectDetectionButton.Visible = 1;
+            else
+                app.ObjectDetectionButton.Visible = 0;
+                app.ObjectDetectionButton.Text = "Object: No";
+                app.ObjectDetectionButton.BackgroundColor = [1 0 0];
+            end
+
+        end
+
+        function DoorOperationReq(app, DoorPush)
+            app.chart.DoorPush = DoorPush;
+            app.DoorPushTextArea.Value = string(DoorPush);
+        end
+
+        function Floor_request(app, Req_Floor)
+            app.liftButtons = [app.liftButtons, Req_Floor];
+            disp(app.liftButtons)
+            %             Logic(app,Req_Floor);
+
+        end
+
+        function Emergency(app,Emg)
+            app.chart.Emg = Emg;
+            disp("Hello")
+            if Emg == 1
+                pause(app.LM);
+                playblocking(app.AEmg)
+            else
+                resume(app.LM);
+            end
+        end
+
+        function liftCall(app) % nextFloor changes from existing if redirection to be done
+            global passengerMatrix
+            global maxPassengers
+
+            fprintf(2, "________________________")
+
+            Velocity = app.chart.Velocity;
+            Cur_Floor = app.chart.Cur_Floor;
+            % The original 5 input values
+            if Velocity > 0.2
+                liftDirection = 1;
+            elseif Velocity < -0.2
+                liftDirection = -1;
+            else
+                liftDirection = 0;
+            end
+            Floor = app.FloorSpinner.Value;  % ReqFloor
+            Direction = app.liftCallDirection; % Do they want to go up or down?
+            liftPosition = Cur_Floor; % where is the lift now?
+            liftDestination = app.ReqFloor; % where is the lift going?
+            nextFloor = app.nextFloor;
+
+            fprintf(2, "[" + string(Floor) +" , " +  string(Direction) +" , " +  string(liftDirection) +" , " +  string(liftPosition) + " , " + string(liftDestination) + "\n");
+
+            avgFloor = 0;
+            if Direction == 1%"Up"
+                avgFloor = round(((10 - Floor)/2) + Floor);
+            else
+                avgFloor = round(Floor / 2);
+            end
+
+            passenger = [double(Floor), now, avgFloor, 0, 0, Direction];
+
+            if size(passengerMatrix,1) == 0
+                passengerMatrix = passenger;
+            else
+                passengerMatrix = [passengerMatrix; passenger];
+            end
+
+
+            % Checks if request is en-route and that there is no urgent passenger
+            overtimeFloor = overtimeCheck(app);
+
+            %             nextFloor = 0;
+
+            if double(overtimeFloor) ~= 0
+                if liftDirection == 1 && overtimeFloor > liftPosition && overtimeFloor < liftDestination%"Up" && overtimeFloor > liftPosition && overtimeFloor < liftDestination
+                    nextFloor = overtimeFloor;
+                elseif liftDirection == -1 && overtimeFloor < liftPosition && overtimeFloor > liftDestination%"Down" && overtimeFloor < liftPosition && overtimeFloor > liftDestination
+                    nextFloor = overtimeFloor;
+                else
+                    nextFloor = liftDestination;
+                end
+            else
+                if liftDirection == 0%"None" % Lift is Stationary
+                    nextFloor = Floor;
+                elseif liftDirection == 1 && Floor > liftPosition && Direction == liftDirection && Floor < liftDestination%"Up" && Floor > liftPosition && Direction == liftDirection && Floor < liftDestination
+                    nextFloor = Floor;
+                elseif liftDirection == -1 && Floor < liftPosition && Direction == liftDirection && Floor > liftDestination%"Down" && Floor < liftPosition && Direction == liftDirection && Floor > liftDestination
+                    nextFloor = Floor;
+                else
+                    nextFloor = liftDestination;
+                end
+            end
+
+            % Checks if doing the re-route will cause too many passengers to be
+            % picked up
+            if nextFloor == Floor
+                tempCounter = 0;
+                currentPassengers = 0;
+                for j = 1:size(passengerMatrix,1)
+                    passengerMatrix(j,4)
+                    if double(passengerMatrix(j,4)) ~= 0
+                        currentPassengers = currentPassengers + 1;
+                    end
+                    if double(passengerMatrix(j,5)) == Floor
+                        tempCounter = tempCounter - 1;
+                    elseif double(passengerMatrix(j,1)) == Floor
+                        tempCounter = tempCounter + 1;
+                    end
+                end
+                if currentPassengers + tempCounter > maxPassengers
+                    nextFloor = liftDestination;
+                end
+            end
+            app.chart.nextFloor = nextFloor;
+            app.chart.Req_Floor = nextFloor;
+            app.ReqFloor = nextFloor;
+            app.nextFloor = nextFloor;
+            app.NextFloor.Value = string(nextFloor);
+            fprintf(2,"nextFloor = " + string(nextFloor))
+            fprintf(2, "___________")
+            %             disp(passengerMatrix);
+            %             app.liftCallDirection = 0;
+            %Check if enough time to slow down
+        end
+
+        function liftStopped(app)% buttonPressed = Internal Button
+            global passengerMatrix;
+            liftFloor = app.chart.Cur_Floor;
+            buttonPressed = app.liftButtons;
+            % Checks for passengers getting off on this floor, and assinging floors
+            % to passengers getting on at the floor
+            buttonPressedTemp = buttonPressed;
+            allocationCounter = 1;
+            tempCounter = size(passengerMatrix,1);
+            i = 1;
+            while i <= tempCounter % goes through passenger matrix
+                if double(passengerMatrix(i,5)) == liftFloor
+                    passengerMatrix(i,:) = []; % Deletes from Passenger Matrix if they got off here
+                    tempCounter = tempCounter - 1;
+                elseif double(passengerMatrix(i,1)) == liftFloor && double(passengerMatrix(i,4)) == 0
+                    passengerMatrix(i,4) = now; % Adds wait time to Passenger Matrix if they got on here
+                    passengerMatrix(i,5) = buttonPressedTemp(allocationCounter); %appends actual floor to person who got on here
+                    if allocationCounter < length(buttonPressed) % Checks if multiple floor buttons pressed
+                        allocationCounter = allocationCounter + 1; % as buttonPressed can be array, work through the list
+                    end
+                    i = i + 1;
+                else
+                    i = i + 1;
+                end
+            end
+
+
+            stopArray = [];
+            motionArray = [];
+
+            pickupArray = [];
+            distinationArray = [];
+            directionArray = [];
+            passengerDone = [];
+            for i = 1:size(passengerMatrix,1) % Goes through passenger matrix
+                pickupArray(i) = passengerMatrix(i,1); % Pickup location
+                if double(passengerMatrix(i,5)) == 0
+                    destinationArray(i) = passengerMatrix(i,3); % Dropoff Location (ESTIMATED)
+                else
+                    destinationArray(i) = passengerMatrix(i,5); % Dropoff Location (ACTUAL)
+                end
+                directionArray = [directionArray passengerMatrix(i,6)];
+                if double(passengerMatrix(i,4)) == 0
+                    passengerDone(i) = 1;
+                else
+                    passengerDone(i) = 2;
+                end
+            end
+
+            minPath = 0;
+            timeStop = 5;
+            timeMotion = 1;
+            timeArrayUp = []; % Where results of Up calculation are held
+            locationArrayUp = [];
+            timeArrayDown = []; % Where results of Down calculation are held
+            locationArrayDown = [];
+            for i = 1:10 % Cycles through each floor (1-10)
+                currentPath = abs(liftFloor - i)  * (length(passengerDone) - sum(passengerDone(:) == 3)) * (timeStop + timeMotion); % Cost to travel to current tested floor
+                % START UP
+                if i ~= 10 %Doesn't go up if on top floor
+                    currentStops = 0;
+                    currentMotion = 0;
+                    Direction = "Up";
+                    floorTemp = i;
+                    flag = 0;
+
+                    passengerDone = [];
+                    for i2 = 1:size(passengerMatrix,1) % Goes through passenger matrix
+                        if double(passengerMatrix(i2,4)) == 0
+                            passengerDone(i2) = 1;
+                        else
+                            passengerDone(i2) = 2;
+                        end
+                    end
+
+                    currentJobArray = [];
+                    for j = 1:size(passengerMatrix,1) % Cycles through the entire passsenger matrix to check for passengers in same direction
+                        if directionArray(j) == Direction
+                            currentJobArray = [currentJobArray pickupArray(j)];
+                            currentJobArray = [currentJobArray destinationArray(j)];
+                        end
+                    end
+
+                    sortedJobs = unique(sort(double(currentJobArray))); % Sorts array and removes duplicates for Up
+                    startIndex = find(double(unique(sort([currentJobArray floorTemp]))) == double(floorTemp)); %%CHANGES THESE IN BELOW FOR GOING DOWN, FLIP SORT
+                    currentJobArray = [];
+                    for j = 1:size(passengerMatrix,1)
+                        if directionArray(j) ~= Direction
+                            currentJobArray = [currentJobArray pickupArray(j)];
+                            currentJobArray = [currentJobArray destinationArray(j)];
+                        end
+                    end
+
+                    sortedJobs2 = fliplr(unique(sort(double(currentJobArray)))); % repeat for opposite, flipped (higher floors first)
+
+                    % Checks the index position of the nearest demanded floor, will
+                    % set that floor as the first desitination
+
+                    inuseArray = sortedJobs;
+                    locationArray = [];
+                    while ismember(1,passengerDone()) == 1 || ismember(2,passengerDone()); % While there is still demand
+                        global maxPassengers % Checks again for passenger overload
+                        tempCounter = 0;
+                        currentPassengers = 0;
+                        for j = 1:size(passengerMatrix,1)
+                            if double(passengerMatrix(j,4)) ~= 0
+                                currentPassengers = currentPassengers + 1;
+                            end
+                            startIndex
+                            inuseArray
+                            double(passengerMatrix(j,5))
+                            if double(passengerMatrix(j,5)) == inuseArray(startIndex)
+                                tempCounter = tempCounter - 1;
+                            elseif double(passengerMatrix(j,1)) == inuseArray(startIndex)
+                                tempCounter = tempCounter + 1;
+                            end
+                        end
+                        if currentPassengers + tempCounter <= maxPassengers
+                            for i2 = 1:size(passengerMatrix,1) % Checks each passenger and adjusts their current status at this gloor
+                                if directionArray(i2) == Direction
+                                    if passengerDone(i2) == 1 && pickupArray(i2) == inuseArray(startIndex)
+                                        passengerDone(i2) = 2;
+                                        if flag ~= 1
+                                            locationArray(length(locationArray) + 1) = inuseArray(startIndex);
+                                            currentStops = currentStops + (1 * (length(passengerDone) - sum(passengerDone(:) == 3)));
+                                            currentMotion = double(currentMotion) + (abs(double(inuseArray(startIndex)) - double(floorTemp)) * (double(length(passengerDone)) - double(sum(passengerDone(:) == 3))));
+                                            floorTemp = inuseArray(startIndex);
+                                            flag = 1;
+                                        end
+                                    end
+                                    if passengerDone(i2) == 2 && double(destinationArray(i2)) == inuseArray(startIndex)
+                                        passengerDone(i2) = 3;
+                                        if flag ~= 1
+                                            locationArray(length(locationArray) + 1) = inuseArray(startIndex);
+                                            currentStops = currentStops + (1 * (length(passengerDone) - sum(passengerDone(:) == 3)));
+                                            currentMotion = double(currentMotion) + (abs(double(inuseArray(startIndex)) - double(floorTemp)) * (double(length(passengerDone)) - double(sum(passengerDone(:) == 3))));
+                                            floorTemp = inuseArray(startIndex);
+                                            flag = 1;
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        % Checks if the index position should be reset at end
+                        % of floors
+
+                        if Direction == "Up" && startIndex == length(inuseArray)
+                            Direction = "Down";
+                            startIndex = 0;
+                            inuseArray = sortedJobs2;
+                        elseif Direction == "Down" && startIndex == length(inuseArray)
+                            Direction = "Up";
+                            startIndex = 0;
+                            inuseArray = sortedJobs;
+                        end
+                        startIndex = startIndex + 1;
+                        flag = 0;
+                    end
+                    timeArrayUp(length(timeArrayUp)+1) = ((currentStops * timeStop) + (currentMotion * timeMotion)) + currentPath; % Added +1
+                    locationArrayUp = [locationArrayUp locationArray(1)];
+                end
+
+
+                % START DOWN
+                if i ~= 1 %Doesn't go down if on bottom floor
+                    currentStops = 0;
+                    currentMotion = 0;
+                    Direction = "Down";
+                    floorTemp = i;
+                    flag = 0;
+
+                    passengerDone = [];
+                    for i2 = 1:size(passengerMatrix,1) % Goes through passenger matrix
+                        if double(passengerMatrix(i2,4)) == 0
+                            passengerDone(i2) = 1;
+                        else
+                            passengerDone(i2) = 2;
+                        end
+                    end
+
+                    %passengerDone
+                    currentJobArray = [];
+                    for j = 1:size(passengerMatrix,1) % Cycles through the entire passsenger matrix to check for passengers in same direction
+                        if directionArray(j) ~= Direction
+                            currentJobArray = [currentJobArray pickupArray(j)];
+                            currentJobArray = [currentJobArray destinationArray(j)];
+                        end
+                    end
+
+                    sortedJobs = fliplr(unique(sort(double(currentJobArray)))); % Sorts array and removes duplicates for Down, flipped
+                    startIndex = find(double(unique(sort([currentJobArray floorTemp]))) == double(floorTemp)); %%CHANGES THESE IN BELOW FOR GOING DOWN, FLIP SORT
+
+                    currentJobArray = [];
+                    for j = 1:size(passengerMatrix,1)
+                        if directionArray(j) == Direction
+                            currentJobArray = [currentJobArray pickupArray(j)];
+                            currentJobArray = [currentJobArray destinationArray(j)];
+                        end
+                    end
+
+                    sortedJobs2 = unique(sort(double(currentJobArray))); % repeat for opposite
+
+                    % Checks the index position of the nearest demanded floor, will
+                    % set that floor as the first desitination
+
+                    inuseArray = sortedJobs;
+                    locationArray = [];
+
+                    while ismember(1,passengerDone()) == 1 || ismember(2,passengerDone()) % While there is still demand
+                        global maxPassengers % Checks again for passenger overload
+                        tempCounter = 0;
+                        currentPassengers = 0;
+                        for j = 1:size(passengerMatrix,1)
+                            if double(passengerMatrix(j,4)) ~= 0
+                                currentPassengers = currentPassengers + 1;
+                            end
+                            if double(passengerMatrix(j,5)) == inuseArray(startIndex)
+                                tempCounter = tempCounter - 1;
+                            elseif double(passengerMatrix(j,1)) == inuseArray(startIndex)
+                                tempCounter = tempCounter + 1;
+                            end
+                        end
+                        if currentPassengers + tempCounter <= maxPassengers
+                            %passengerDone
+                            %inuseArray(startIndex)
+                            for i2 = 1:size(passengerMatrix,1) % Checks each passenger and adjusts their current status at this gloor
+
+                                if directionArray(i2) == Direction
+                                    if passengerDone(i2) == 1 && pickupArray(i2) == inuseArray(startIndex)
+                                        passengerDone(i2) = 2;
+                                        if flag ~= 1
+                                            locationArray(length(locationArray) + 1) = inuseArray(startIndex);
+                                            currentStops = currentStops + (1 * (length(passengerDone) - sum(passengerDone(:) == 3)));
+                                            currentMotion = double(currentMotion) + (abs(double(inuseArray(startIndex)) - double(floorTemp)) * (double(length(passengerDone)) - double(sum(passengerDone(:) == 3))));
+                                            floorTemp = inuseArray(startIndex);
+                                            flag = 1;
+                                        end
+                                    end
+                                    if double(passengerDone(i2)) == 2 && double(destinationArray(i2)) == inuseArray(startIndex)
+                                        passengerDone(i2) = 3;
+                                        if flag ~= 1
+                                            locationArray(length(locationArray) + 1) = inuseArray(startIndex);
+                                            currentStops = currentStops + (1 * (length(passengerDone) - sum(passengerDone(:) == 3)));
+                                            currentMotion = double(currentMotion) + (abs(double(inuseArray(startIndex)) - double(floorTemp)) * (double(length(passengerDone)) - double(sum(passengerDone(:) == 3))));
+                                            floorTemp = inuseArray(startIndex);
+                                            flag = 1;
+                                        end
+                                    end
+                                end
+                            end
+                        else
+
+                        end
+
+                        % Checks if the index position should be reset at end
+                        % of floors
+                        if Direction == "Up" && double(startIndex) == length(inuseArray)
+                            Direction = "Down";
+                            startIndex = 0;
+                            inuseArray = sortedJobs2;
+                        elseif Direction == "Down" && double(startIndex) == length(inuseArray)
+                            Direction = "Up";
+                            startIndex = 0;
+                            inuseArray = sortedJobs;
+                        end
+                        startIndex = startIndex + 1;
+                        flag = 0;
+                    end
+                    timeArrayDown(length(timeArrayDown)+1) = ((currentStops * timeStop) + (currentMotion * timeMotion)) + currentPath;
+                    stopArray(length(stopArray)+1) = currentStops;
+                    motionArray(length(motionArray)+1) = currentMotion;
+                    locationArrayDown = [locationArrayDown locationArray(1)];
+                end
+
+                app.chart.Req_Floor = bestnextfloor;
+            end
+            % Compares up and Down Times, picks the shortest and spits out the best next
+            % floor to go to
+
+            timeArrayUp
+            timeArrayDown
+
+            locationArrayDown
+            locationArrayUp
+
+
+            bestNextFloor = 0;
+            sortUp = sort(timeArrayUp);
+            sortDown = sort(timeArrayDown);
+            if sortUp(1) < sortDown(1)
+                bestNextFloor = locationArrayUp(find(timeArrayUp == sortUp(1))); % Extracts the index of the best next floor
+            else
+                timeArrayDown
+                find(timeArrayDown == sortDown(1))
+                bestNextFloor = locationArrayDown(find(timeArrayDown == sortDown(1)));
+            end
+
+            if overtimeCheck() ~= 0
+                bestNextFloor = overtimeCheck();
+            end
+        end
+
+        function priorityFloor = overtimeCheck(app)
+            % Goes through Pass.Mtrx and checks for overtime
+            global passengerMatrix
+            overtimePos = [];
+            overtimeWait = [];
+            overtimeType = [];
+            for i = 1:size(passengerMatrix,1)
+                if now - double(passengerMatrix(i,2)) > 45000 && double(passengerMatrix(i,4)) == 0
+                    overtimePos(length(overtimePos) + 1) = i;
+                    overtimeWait(length(overtimeWait) + 1) = now - double(passengerMatrix(i,2)) - 45000; %Target Times in Milliseconds
+                    overtimeType(length(overtimePos) + 1) = "Wait";
+                elseif now - double(passengerMatrix(i,4)) > 45000  && double(passengerMatrix(i,4)) ~= 0
+                    overtimePos(length(overtimePos) + 1) = i;
+                    overtimeWait(length(overtimeWait) + 1) = now - double(passengerMatrix(i,4)) - 45000;
+                    overtimeType(length(overtimePos) + 1) = "Lift";
+                elseif ((now - (double(passengerMatrix(i,4))))+(double(passengerMatrix(i,4))-double(passengerMatrix(i,2)))) > 60000  && double(passengerMatrix(i,4)) ~= 0
+                    overtimePos(length(overtimePos) + 1) = i;
+                    overtimeWait(length(overtimeWait) + 1) = ((now - (double(passengerMatrix(i,4))))+(double(passengerMatrix(i,4))-double(passengerMatrix(i,2)))) - 60000;
+                    overtimeType(length(overtimePos) + 1) = "Lift";
+                end
+            end
+
+            % Checks if overtime present, where to go first.
+
+            if length(overtimeWait) > 0
+                sortWaitTimes = sort(overtimeWait);
+                priorityIndex = find(overtimeWait == sortWaitTimes(length(sortWaitTimes)));
+                priorityFloor = passengerMatrix(overtimePos(priorityIndex),1);
+            else
+                priorityFloor = 0;
+            end
+        end
+
+    end
+
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Code that executes after component creation
+        function startupFcn(app)
+            app.chart = chart;               % access data in Stateflow chart
+            assignin('base','app',app)      % access app from base workspaces
+            app.Ext_User_Display.FontSize = 35;
+            app.ObjectDetectionButton.Visible = 0;
+            app.DirectionDown.Visible = 0;
+            app.DirectionUp.Visible = 0;
+            app.liftCallDirection  = 0;
+            app.ReqFloor = 0;
+            app.Counter = 0;
+            app.FloorCounter = 1;
+            app.nextFloor = 0;
+            app.FloorSpinner.Value = 6;
+            app.liftButtons = [];
+            global passengerMatrix % Adds to Passenger Matrix, also checks if empty
+            passengerMatrix = [];
+
+            global maxPassengers
+            maxPassengers = 10;
+            %             Lift Music
+            lift_music = pwd + "/Audio/trial_a3.mp3";
+            [y, Lm] = audioread(lift_music);
+            app.LM=audioplayer(y,Lm);
+            play(app.LM);
+
+            %             Alarm Bell
+            alarm_bell = pwd + "/Audio/Alarm_bell.mp3";
+            [y_ab, abs] = audioread(alarm_bell);
+            app.AB = audioplayer(y_ab, abs);
+
+            %             %             Arriving At Floor
+            %             floor_1 = pwd + "/Audio/trial_a4.mp3";
+            %             [f1, F1] = audioread(floor_1);
+            %             app.Floor_1 = audioplayer(f1, F1);
+
+            %             Doors Opening
+            doors_op = pwd + "/Audio/Doors_Opening.mp3";
+            [y_op, OP] = audioread(doors_op);
+            app.DoorsOp = audioplayer(y_op,OP);
+
+            %              Doors Closing
+            doors_cl = pwd + "/Audio/Doors_Closing.mp3";
+            [y_cl, CL] = audioread(doors_cl);
+            app.DoorsCl = audioplayer(y_cl,CL);
+
+            %             Floor
+            floor = pwd + "/Audio/Floor.mp3";
+            [y_f, F] = audioread(floor);
+            app.Floor = audioplayer(y_f, F);
+
+            %             One
+            one = pwd + "/Audio/One.mp3";
+            [y_1, O] = audioread(one);
+            app.AOne = audioplayer(y_1, O);
+
+            %             Two
+            two = pwd + "/Audio/Two.mp3";
+            [y_2, Tw] = audioread(two);
+            app.ATwo = audioplayer(y_2, Tw);
+
+            %             Three
+            three = pwd + "/Audio/Three.mp3";
+            [y_3, Thr] = audioread(three);
+            app.AThree = audioplayer(y_3, Thr);
+
+            %             Four
+            four = pwd + "/Audio/Four.mp3";
+            [y_4, Fou] = audioread(four);
+            app.AFour = audioplayer(y_4, Fou);
+
+            %             Five
+            five = pwd + "/Audio/Five.mp3";
+            [y_5, Fiv] = audioread(five);
+            app.AFive = audioplayer(y_5, Fiv);
+
+            %             Six
+            six = pwd + "/Audio/Six.mp3";
+            [y_6, Si] = audioread(six);
+            app.ASix = audioplayer(y_6, Si);
+
+            %             Seven
+            seven = pwd + "/Audio/Seven.mp3";
+            [y_7, Se] = audioread(seven);
+            app.ASeven = audioplayer(y_7, Se);
+
+            %             Eight
+            eight = pwd + "/Audio/Eight.mp3";
+            [y_8, Ei] = audioread(eight);
+            app.AEight = audioplayer(y_8, Ei);
+
+            %             Emergency
+            emg = pwd + "/Audio/Emergency.mp3";
+            [y_e, Em] =  audioread(emg);
+            app.AEmg = audioplayer(y_e, Em);
+        end
+
+        % Close request function: UIFigure
+        function UIFigureCloseRequest(app, event)
+            delete(app)
+            set_param('Simulink_Model','SimulationCommand', 'stop');
+        end
+
+        % Callback function
+        function ButtonPushed(app, event)
+            app.TextArea.Value = string(event.Source.Text);
+        end
+
+        % Button pushed function: Button_2
+        function One(app, event)
+            Floor_request(app, 1)
+        end
+
+        % Button pushed function: Button_3
+        function Two(app, event)
+            Floor_request(app, 2)
+        end
+
+        % Button pushed function: Button_4
+        function Three(app, event)
+            Floor_request(app, 3)
+        end
+
+        % Button pushed function: Button_5
+        function Four(app, event)
+            Floor_request(app, 4)
+        end
+
+        % Button pushed function: Button_6
+        function Five(app, event)
+            Floor_request(app, 5)
+        end
+
+        % Button pushed function: Button_7
+        function Six(app, event)
+            Floor_request(app, 6)
+        end
+
+        % Button pushed function: Button_8
+        function Seven(app, event)
+            Floor_request(app, 7)
+        end
+
+        % Button pushed function: Button_9
+        function Eight(app, event)
+            Floor_request(app, 8)
+        end
+
+        % Button pushed function: STOPButton
+        function STOP(app, event)
+            Emergency(app, 1);
+
+            time = clock;
+            address = pwd + "/Logs/" + date
+            name = time(4) +":" + time(5)+":" + round(time(6)) + ".log"
+            Msg = 'Test Log'
+            mkdir(address)
+            Dir = address+"/" +name;
+            fid = fopen(Dir, 'w');
+            if fid == -1
+                error('Cannot open log file.');
+            end
+            fprintf(fid, '%s: %s\n', datestr(now, 0), Msg);
+            fclose(fid);
+        end
+
+        % Button pushed function: NormalOperationButton
+        function GO(app, event)
+            Emergency(app, 0);
+        end
+
+        % Button pushed function: Door_Close
+        function DoorClose(app, event)
+            DoorOperationReq(app,1);
+        end
+
+        % Button pushed function: Door_Open
+        function DoorOpen(app, event)
+            DoorOperationReq(app,0);
+        end
+
+        % Value changed function: FloorSpinner
+        function FloorSpinnerValueChanged(app, event)
+            app.Lamp.Enable = 0;
+            if app.FloorSpinner.Value == 1
+                app.DOWNButton.Visible = 0;
+                app.DOWNButton.Enable = 0;
+            elseif app.FloorSpinner.Value == 8
+                app.UPButton.Visible = 0;
+                app.UPButton.Enable = 0;
+            else
+                app.DOWNButton.Visible = 1;
+                app.DOWNButton.Enable = 1;
+                app.UPButton.Visible = 1;
+                app.UPButton.Enable = 1;
+            end
+        end
+
+        % Button pushed function: DOWNButton
+        function DOWNButtonPushed(app, event)
+            %             app.UpDownReq(1,end+1) = -1*app.FloorSpinner.Value;
+            %             app.UpDownReq(2,end) = app.NoPassengersSpinner.Value;
+            %             assignin('base','UpDownReq',app.UpDownReq);
+            %             app.Lamp.Enable = 1;
+            app.liftCallDirection = -1;
+            liftCall(app);
+        end
+
+        % Button pushed function: UPButton
+        function UpButtonPushed(app, event)
+            %             app.FloorReached()
+            %             assignin('base','RqFloor',app.RqFloor);
+            app.liftCallDirection = 1;
+            liftCall(app);
+        end
+
+        % Button pushed function: ObjectDetectionButton
+        function ObjectDetectionToggle(app, event)
+            if isequal(event.Source.Text, "Object: No")
+                app.ObjectDetectionButton.Text = "Object: Yes";
+                app.ObjectDetectionButton.BackgroundColor = [0 1 0];
+                stop(app.LM);
+                app.ObjectDetected = 1;
+            elseif isequal(event.Source.Text, "Object: Yes")
+                app.ObjectDetectionButton.Text = "Object: No";
+                app.ObjectDetectionButton.BackgroundColor = [1 0 0];
+                app.ObjectDetected = 0;
+            end
+        end
+
+        % Button pushed function: StartButton
+        function StartAudio(app, event)
+            try
+                play(app.LM)
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: StopButton
+        function StopAudio(app, event)
+            try
+                stop(app.LM)
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: pauseButton
+        function PauseAudio(app, event)
+            try
+                pause(app.LM)
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: resumeButton
+        function ResumeAudio(app, event)
+            try
+                resume(app.PO)
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: AlarmStartButton
+        function AlarmBell_Start(app, event)
+            try
+                stop(app.Floor_1);
+                stop(app.LM);
+                play(app.AB);
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: AlarmStopButton
+        function AlarmBell_Stop(app, event)
+            try
+                stop(app.AB);
+                play(app.LM);
+            catch ME
+                uiwait(msgbox('Could not open that file with audioread'));
+            end
+        end
+
+        % Button pushed function: GButton
+        function GroundFloor(app, event)
+            Floor_request(app, 0);
+        end
+
+        % Button pushed function: P1Button
+        function ParkingFloor(app, event)
+            Floor_request(app, -1);
+        end
+
+        % Button pushed function: DirectionUp
+        function ExtDisDirection(app, event)
+        function ExtDisDirection(app, event)
+        end
+
+        % Callback function: TestButton, UIFigure
+        function Test(app, event)
+            disp("Hello")
+            fprintf(2, "Test")
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 1601 813];
+            app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.CloseRequestFcn = createCallbackFcn(app, @UIFigureCloseRequest, true);
+            app.UIFigure.ButtonDownFcn = createCallbackFcn(app, @Test, true);
+
+            % Create FloorGauge
+            app.FloorGauge = uigauge(app.UIFigure, 'circular');
+            app.FloorGauge.Limits = [0 8];
+            app.FloorGauge.MajorTicks = [0 1 2 3 4 5 6 7 8];
+            app.FloorGauge.MinorTicks = [];
+            app.FloorGauge.Position = [366 -3 190 190];
+
+            % Create CurrentFloorEditFieldLabel
+            app.CurrentFloorEditFieldLabel = uilabel(app.UIFigure);
+            app.CurrentFloorEditFieldLabel.HorizontalAlignment = 'right';
+            app.CurrentFloorEditFieldLabel.Position = [28 204 76 22];
+            app.CurrentFloorEditFieldLabel.Text = 'Current Floor';
+
+            % Create CurrentFloorEditField
+            app.CurrentFloorEditField = uieditfield(app.UIFigure, 'text');
+            app.CurrentFloorEditField.Position = [119 204 100 22];
+
+            % Create Button_2
+            app.Button_2 = uibutton(app.UIFigure, 'push');
+            app.Button_2.ButtonPushedFcn = createCallbackFcn(app, @One, true);
+            app.Button_2.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_2.FontSize = 32;
+            app.Button_2.FontWeight = 'bold';
+            app.Button_2.FontColor = [1 1 1];
+            app.Button_2.Position = [157 404 76 76];
+            app.Button_2.Text = '1';
+
+            % Create Button_3
+            app.Button_3 = uibutton(app.UIFigure, 'push');
+            app.Button_3.ButtonPushedFcn = createCallbackFcn(app, @Two, true);
+            app.Button_3.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_3.FontSize = 32;
+            app.Button_3.FontWeight = 'bold';
+            app.Button_3.FontColor = [1 1 1];
+            app.Button_3.Position = [52 404 76 76];
+            app.Button_3.Text = '2';
+
+            % Create Button_4
+            app.Button_4 = uibutton(app.UIFigure, 'push');
+            app.Button_4.ButtonPushedFcn = createCallbackFcn(app, @Three, true);
+            app.Button_4.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_4.FontSize = 32;
+            app.Button_4.FontWeight = 'bold';
+            app.Button_4.FontColor = [1 1 1];
+            app.Button_4.Position = [157 502 76 76];
+            app.Button_4.Text = '3';
+
+            % Create Button_5
+            app.Button_5 = uibutton(app.UIFigure, 'push');
+            app.Button_5.ButtonPushedFcn = createCallbackFcn(app, @Four, true);
+            app.Button_5.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_5.FontSize = 32;
+            app.Button_5.FontWeight = 'bold';
+            app.Button_5.FontColor = [1 1 1];
+            app.Button_5.Position = [52 502 76 76];
+            app.Button_5.Text = '4';
+
+            % Create Button_6
+            app.Button_6 = uibutton(app.UIFigure, 'push');
+            app.Button_6.ButtonPushedFcn = createCallbackFcn(app, @Five, true);
+            app.Button_6.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_6.FontSize = 32;
+            app.Button_6.FontWeight = 'bold';
+            app.Button_6.FontColor = [1 1 1];
+            app.Button_6.Position = [157 600 76 76];
+            app.Button_6.Text = '5';
+
+            % Create Button_7
+            app.Button_7 = uibutton(app.UIFigure, 'push');
+            app.Button_7.ButtonPushedFcn = createCallbackFcn(app, @Six, true);
+            app.Button_7.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_7.FontSize = 32;
+            app.Button_7.FontWeight = 'bold';
+            app.Button_7.FontColor = [1 1 1];
+            app.Button_7.Position = [52 600 76 76];
+            app.Button_7.Text = '6';
+
+            % Create Button_8
+            app.Button_8 = uibutton(app.UIFigure, 'push');
+            app.Button_8.ButtonPushedFcn = createCallbackFcn(app, @Seven, true);
+            app.Button_8.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_8.FontSize = 32;
+            app.Button_8.FontWeight = 'bold';
+            app.Button_8.FontColor = [1 1 1];
+            app.Button_8.Position = [157 700 76 76];
+            app.Button_8.Text = '7';
+
+            % Create Button_9
+            app.Button_9 = uibutton(app.UIFigure, 'push');
+            app.Button_9.ButtonPushedFcn = createCallbackFcn(app, @Eight, true);
+            app.Button_9.BackgroundColor = [0.651 0.651 0.651];
+            app.Button_9.FontSize = 32;
+            app.Button_9.FontWeight = 'bold';
+            app.Button_9.FontColor = [1 1 1];
+            app.Button_9.Position = [52 700 76 76];
+            app.Button_9.Text = '8';
+
+            % Create STOPButton
+            app.STOPButton = uibutton(app.UIFigure, 'push');
+            app.STOPButton.ButtonPushedFcn = createCallbackFcn(app, @STOP, true);
+            app.STOPButton.BackgroundColor = [1 0 0];
+            app.STOPButton.FontSize = 35;
+            app.STOPButton.FontWeight = 'bold';
+            app.STOPButton.Position = [265 321 116 54];
+            app.STOPButton.Text = 'STOP';
+
+            % Create MOVINGButton
+            app.MOVINGButton = uibutton(app.UIFigure, 'push');
+            app.MOVINGButton.HandleVisibility = 'off';
+            app.MOVINGButton.BackgroundColor = [0.949 0.9059 0.8078];
+            app.MOVINGButton.FontSize = 20;
+            app.MOVINGButton.FontWeight = 'bold';
+            app.MOVINGButton.FontColor = [0.149 0.149 0.149];
+            app.MOVINGButton.Position = [272 600 126 40];
+            app.MOVINGButton.Text = 'MOVING';
+
+            % Create Lamp
+            app.Lamp = uilamp(app.UIFigure);
+            app.Lamp.Enable = 'off';
+            app.Lamp.Position = [442 604 35 35];
+
+            % Create TextArea
+            app.TextArea = uitextarea(app.UIFigure);
+            app.TextArea.BackgroundColor = [0 0 0];
+            app.TextArea.Position = [548 276 10 537];
+
+            % Create TextArea_2
+            app.TextArea_2 = uitextarea(app.UIFigure);
+            app.TextArea_2.BackgroundColor = [0 0 0];
+            app.TextArea_2.Position = [1 255 1601 22];
+
+            % Create NormalOperationButton
+            app.NormalOperationButton = uibutton(app.UIFigure, 'push');
+            app.NormalOperationButton.ButtonPushedFcn = createCallbackFcn(app, @GO, true);
+            app.NormalOperationButton.BackgroundColor = [0 1 0];
+            app.NormalOperationButton.FontSize = 18;
+            app.NormalOperationButton.FontWeight = 'bold';
+            app.NormalOperationButton.Position = [282 200 167 30];
+            app.NormalOperationButton.Text = 'Normal Operation';
+
+            % Create UPButton
+            app.UPButton = uibutton(app.UIFigure, 'push');
+            app.UPButton.ButtonPushedFcn = createCallbackFcn(app, @UpButtonPushed, true);
+            app.UPButton.BackgroundColor = [0.651 0.651 0.651];
+            app.UPButton.FontSize = 20;
+            app.UPButton.FontWeight = 'bold';
+            app.UPButton.FontColor = [1 1 1];
+            app.UPButton.Position = [599 473 100 92];
+            app.UPButton.Text = 'UP';
+
+            % Create DOWNButton
+            app.DOWNButton = uibutton(app.UIFigure, 'push');
+            app.DOWNButton.ButtonPushedFcn = createCallbackFcn(app, @DOWNButtonPushed, true);
+            app.DOWNButton.BackgroundColor = [0.651 0.651 0.651];
+            app.DOWNButton.FontSize = 20;
+            app.DOWNButton.FontWeight = 'bold';
+            app.DOWNButton.FontColor = [1 1 1];
+            app.DOWNButton.Enable = 'off';
+            app.DOWNButton.Visible = 'off';
+            app.DOWNButton.Position = [806 473 100 92];
+            app.DOWNButton.Text = 'DOWN';
+
+            % Create Lamp_2
+            app.Lamp_2 = uilamp(app.UIFigure);
+            app.Lamp_2.Enable = 'off';
+            app.Lamp_2.Position = [738 502 35 35];
+            app.Lamp_2.Color = [0.9294 0.6941 0.1255];
+
+            % Create NoPassengersSpinnerLabel
+            app.NoPassengersSpinnerLabel = uilabel(app.UIFigure);
+            app.NoPassengersSpinnerLabel.HorizontalAlignment = 'right';
+            app.NoPassengersSpinnerLabel.FontSize = 20;
+            app.NoPassengersSpinnerLabel.Position = [569 313 148 24];
+            app.NoPassengersSpinnerLabel.Text = 'No. Passengers';
+
+            % Create NoPassengersSpinner
+            app.NoPassengersSpinner = uispinner(app.UIFigure);
+            app.NoPassengersSpinner.Limits = [1 20];
+            app.NoPassengersSpinner.FontSize = 20;
+            app.NoPassengersSpinner.Position = [727 312 68 25];
+            app.NoPassengersSpinner.Value = 1;
+
+            % Create FloorSpinnerLabel
+            app.FloorSpinnerLabel = uilabel(app.UIFigure);
+            app.FloorSpinnerLabel.HorizontalAlignment = 'right';
+            app.FloorSpinnerLabel.FontSize = 20;
+            app.FloorSpinnerLabel.Position = [667 351 51 24];
+            app.FloorSpinnerLabel.Text = 'Floor';
+
+            % Create FloorSpinner
+            app.FloorSpinner = uispinner(app.UIFigure);
+            app.FloorSpinner.Limits = [1 8];
+            app.FloorSpinner.ValueChangedFcn = createCallbackFcn(app, @FloorSpinnerValueChanged, true);
+            app.FloorSpinner.FontSize = 20;
+            app.FloorSpinner.Position = [728 350 68 25];
+            app.FloorSpinner.Value = 6;
+
+            % Create Door_Close
+            app.Door_Close = uibutton(app.UIFigure, 'push');
+            app.Door_Close.ButtonPushedFcn = createCallbackFcn(app, @DoorClose, true);
+            app.Door_Close.VerticalAlignment = 'top';
+            app.Door_Close.BackgroundColor = [0.651 0.651 0.651];
+            app.Door_Close.FontSize = 32;
+            app.Door_Close.FontWeight = 'bold';
+            app.Door_Close.FontColor = [1 1 1];
+            app.Door_Close.Position = [297 427 76 53];
+            app.Door_Close.Text = '><';
+
+            % Create Door_Open
+            app.Door_Open = uibutton(app.UIFigure, 'push');
+            app.Door_Open.ButtonPushedFcn = createCallbackFcn(app, @DoorOpen, true);
+            app.Door_Open.VerticalAlignment = 'top';
+            app.Door_Open.BackgroundColor = [0.651 0.651 0.651];
+            app.Door_Open.FontSize = 32;
+            app.Door_Open.FontWeight = 'bold';
+            app.Door_Open.FontColor = [1 1 1];
+            app.Door_Open.Position = [409 427 76 53];
+            app.Door_Open.Text = '<>';
+
+            % Create DoorStatusTextAreaLabel
+            app.DoorStatusTextAreaLabel = uilabel(app.UIFigure);
+            app.DoorStatusTextAreaLabel.HorizontalAlignment = 'right';
+            app.DoorStatusTextAreaLabel.Position = [757 94 70 22];
+            app.DoorStatusTextAreaLabel.Text = 'Door Status';
+
+            % Create DoorStatusTextArea
+            app.DoorStatusTextArea = uitextarea(app.UIFigure);
+            app.DoorStatusTextArea.Position = [842 58 150 60];
+
+            % Create Ext_User_Display
+            app.Ext_User_Display = uieditfield(app.UIFigure, 'text');
+            app.Ext_User_Display.HorizontalAlignment = 'center';
+            app.Ext_User_Display.Position = [694 648 141 61];
+
+            % Create ObjectDetectionButton
+            app.ObjectDetectionButton = uibutton(app.UIFigure, 'push');
+            app.ObjectDetectionButton.ButtonPushedFcn = createCallbackFcn(app, @ObjectDetectionToggle, true);
+            app.ObjectDetectionButton.BackgroundColor = [1 0 0];
+            app.ObjectDetectionButton.Position = [825 127 100 22];
+            app.ObjectDetectionButton.Text = 'Object: No';
+
+            % Create TextArea_3
+            app.TextArea_3 = uitextarea(app.UIFigure);
+            app.TextArea_3.Editable = 'off';
+            app.TextArea_3.BackgroundColor = [0.9412 0.9412 0.9412];
+            app.TextArea_3.Position = [751 163 267 81];
+            app.TextArea_3.Value = {'A button will appear below when users are able to leave/enter the lift. '; 'This button simulates users passing through the doors and activating the ObjectDetection function. '};
+
+            % Create TestTextLabel
+            app.TestTextLabel = uilabel(app.UIFigure);
+            app.TestTextLabel.HorizontalAlignment = 'right';
+            app.TestTextLabel.Position = [55 165 49 22];
+            app.TestTextLabel.Text = 'TestText';
+
+            % Create TestText
+            app.TestText = uieditfield(app.UIFigure, 'text');
+            app.TestText.Position = [119 165 100 22];
+
+            % Create StartButton
+            app.StartButton = uibutton(app.UIFigure, 'push');
+            app.StartButton.ButtonPushedFcn = createCallbackFcn(app, @StartAudio, true);
+            app.StartButton.Position = [599 184 100 22];
+            app.StartButton.Text = 'Start';
+
+            % Create StopButton
+            app.StopButton = uibutton(app.UIFigure, 'push');
+            app.StopButton.ButtonPushedFcn = createCallbackFcn(app, @StopAudio, true);
+            app.StopButton.Position = [599 150 100 22];
+            app.StopButton.Text = 'Stop';
+
+            % Create pauseButton
+            app.pauseButton = uibutton(app.UIFigure, 'push');
+            app.pauseButton.ButtonPushedFcn = createCallbackFcn(app, @PauseAudio, true);
+            app.pauseButton.Position = [599 117 100 22];
+            app.pauseButton.Text = 'pause';
+
+            % Create resumeButton
+            app.resumeButton = uibutton(app.UIFigure, 'push');
+            app.resumeButton.ButtonPushedFcn = createCallbackFcn(app, @ResumeAudio, true);
+            app.resumeButton.Position = [599 81 100 22];
+            app.resumeButton.Text = 'resume';
+
+            % Create AlarmStartButton
+            app.AlarmStartButton = uibutton(app.UIFigure, 'push');
+            app.AlarmStartButton.ButtonPushedFcn = createCallbackFcn(app, @AlarmBell_Start, true);
+            app.AlarmStartButton.Position = [435 354 99 39];
+            app.AlarmStartButton.Text = 'Alarm Start';
+
+            % Create AlarmStopButton
+            app.AlarmStopButton = uibutton(app.UIFigure, 'push');
+            app.AlarmStopButton.ButtonPushedFcn = createCallbackFcn(app, @AlarmBell_Stop, true);
+            app.AlarmStopButton.Position = [434 298 99 39];
+            app.AlarmStopButton.Text = 'Alarm Stop';
+
+            % Create GButton
+            app.GButton = uibutton(app.UIFigure, 'push');
+            app.GButton.ButtonPushedFcn = createCallbackFcn(app, @GroundFloor, true);
+            app.GButton.BackgroundColor = [0.651 0.651 0.651];
+            app.GButton.FontSize = 32;
+            app.GButton.FontWeight = 'bold';
+            app.GButton.FontColor = [1 1 1];
+            app.GButton.Position = [52 310 76 76];
+            app.GButton.Text = 'G';
+
+            % Create P1Button
+            app.P1Button = uibutton(app.UIFigure, 'push');
+            app.P1Button.ButtonPushedFcn = createCallbackFcn(app, @ParkingFloor, true);
+            app.P1Button.BackgroundColor = [0.651 0.651 0.651];
+            app.P1Button.FontSize = 32;
+            app.P1Button.FontWeight = 'bold';
+            app.P1Button.FontColor = [1 1 1];
+            app.P1Button.Position = [157 313 76 76];
+            app.P1Button.Text = 'P1';
+
+            % Create Gauge
+            app.Gauge = uigauge(app.UIFigure, 'semicircular');
+            app.Gauge.Limits = [-1 8];
+            app.Gauge.MajorTicks = [-1 0 1 2 3 4 5 6 7 8];
+            app.Gauge.Position = [282 669 216 117];
+
+            % Create DirectionUp
+            app.DirectionUp = uibutton(app.UIFigure, 'push');
+            app.DirectionUp.ButtonPushedFcn = createCallbackFcn(app, @ExtDisDirection, true);
+            app.DirectionUp.VerticalAlignment = 'top';
+            app.DirectionUp.BackgroundColor = [0.0745 0.6235 1];
+            app.DirectionUp.FontSize = 35;
+            app.DirectionUp.Position = [694 648 45 61];
+            app.DirectionUp.Text = '↑';
+
+            % Create DirectionDown
+            app.DirectionDown = uibutton(app.UIFigure, 'push');
+            app.DirectionDown.VerticalAlignment = 'top';
+            app.DirectionDown.BackgroundColor = [0.0745 0.6235 1];
+            app.DirectionDown.FontSize = 35;
+            app.DirectionDown.Position = [789 648 46 61];
+            app.DirectionDown.Text = '↓';
+
+            % Create TextArea_4
+            app.TextArea_4 = uitextarea(app.UIFigure);
+            app.TextArea_4.Position = [350 513 148 63];
+            app.TextArea_4.Value = {'G and P1 think about logic in there.'};
+
+            % Create TextArea_5
+            app.TextArea_5 = uitextarea(app.UIFigure);
+            app.TextArea_5.Position = [86 55 148 63];
+            app.TextArea_5.Value = {'Assumptions, list starts at floor 0. '};
+
+            % Create DoorPushTextAreaLabel
+            app.DoorPushTextAreaLabel = uilabel(app.UIFigure);
+            app.DoorPushTextAreaLabel.HorizontalAlignment = 'right';
+            app.DoorPushTextAreaLabel.Position = [52 127 59 22];
+            app.DoorPushTextAreaLabel.Text = 'DoorPush';
+
+            % Create DoorPushTextArea
+            app.DoorPushTextArea = uitextarea(app.UIFigure);
+            app.DoorPushTextArea.Position = [126 127 93 24];
+
+            % Create TestButton
+            app.TestButton = uibutton(app.UIFigure, 'push');
+            app.TestButton.ButtonPushedFcn = createCallbackFcn(app, @Test, true);
+            app.TestButton.BackgroundColor = [0.651 0.651 0.651];
+            app.TestButton.FontSize = 20;
+            app.TestButton.FontWeight = 'bold';
+            app.TestButton.FontColor = [1 1 1];
+            app.TestButton.Position = [867 632 100 92];
+            app.TestButton.Text = 'Test';
+
+            % Create NextFloor
+            app.NextFloor = uitextarea(app.UIFigure);
+            app.NextFloor.Position = [557 220 93 24];
+
+            % Create TextArea_6
+            app.TextArea_6 = uitextarea(app.UIFigure);
+            app.TextArea_6.BackgroundColor = [0 0 0];
+            app.TextArea_6.Position = [1005.14285714286 270.285714285714 10 537];
+
+            % Create TextArea_7
+            app.TextArea_7 = uitextarea(app.UIFigure);
+            app.TextArea_7.Position = [924 287 68 24];
+            app.TextArea_7.Value = {'Floor 2'};
+
+            % Create NormalOperationLampLabel
+            app.NormalOperationLampLabel = uilabel(app.UIFigure);
+            app.NormalOperationLampLabel.HorizontalAlignment = 'right';
+            app.NormalOperationLampLabel.Position = [1023 708 100 22];
+            app.NormalOperationLampLabel.Text = 'Normal Operation';
+
+            % Create NormalOperationLamp
+            app.NormalOperationLamp = uilamp(app.UIFigure);
+            app.NormalOperationLamp.Position = [1138 700 38 38];
+
+            % Create MovingLampLabel
+            app.MovingLampLabel = uilabel(app.UIFigure);
+            app.MovingLampLabel.HorizontalAlignment = 'right';
+            app.MovingLampLabel.Position = [1079 544 44 22];
+            app.MovingLampLabel.Text = 'Moving';
+
+            % Create MovingLamp
+            app.MovingLamp = uilamp(app.UIFigure);
+            app.MovingLamp.Position = [1138 536 38 38];
+
+            % Create FaultStateLampLabel
+            app.FaultStateLampLabel = uilabel(app.UIFigure);
+            app.FaultStateLampLabel.HorizontalAlignment = 'right';
+            app.FaultStateLampLabel.Position = [1059 627 64 22];
+            app.FaultStateLampLabel.Text = 'Fault State';
+
+            % Create FaultStateLamp
+            app.FaultStateLamp = uilamp(app.UIFigure);
+            app.FaultStateLamp.Position = [1138 619 38 38];
+            app.FaultStateLamp.Color = [1 0 0];
+
+            % Create MovementSwitchLabel
+            app.MovementSwitchLabel = uilabel(app.UIFigure);
+            app.MovementSwitchLabel.HorizontalAlignment = 'center';
+            app.MovementSwitchLabel.Position = [1271 619 62 22];
+            app.MovementSwitchLabel.Text = 'Movement';
+
+            % Create MovementSwitch
+            app.MovementSwitch = uiswitch(app.UIFigure, 'rocker');
+            app.MovementSwitch.Position = [1291 677 20 45];
+
+            % Create Slider
+            app.Slider = uislider(app.UIFigure);
+            app.Slider.Limits = [-1 8];
+            app.Slider.MajorTicks = [-1 0 1 2 3 4 5 6 7 8];
+            app.Slider.Orientation = 'vertical';
+            app.Slider.MinorTicks = [];
+            app.Slider.FontSize = 20;
+            app.Slider.FontWeight = 'bold';
+            app.Slider.Position = [1288 346 3 228];
+
+            % Create PositionEditFieldLabel
+            app.PositionEditFieldLabel = uilabel(app.UIFigure);
+            app.PositionEditFieldLabel.HorizontalAlignment = 'right';
+            app.PositionEditFieldLabel.Position = [1075 473 48 22];
+            app.PositionEditFieldLabel.Text = 'Position';
+
+            % Create PositionEditField
+            app.PositionEditField = uieditfield(app.UIFigure, 'numeric');
+            app.PositionEditField.Position = [1138 473 100 22];
+
+            % Create VelocityEditFieldLabel
+            app.VelocityEditFieldLabel = uilabel(app.UIFigure);
+            app.VelocityEditFieldLabel.HorizontalAlignment = 'right';
+            app.VelocityEditFieldLabel.Position = [1076 441 47 22];
+            app.VelocityEditFieldLabel.Text = 'Velocity';
+
+            % Create VelocityEditField
+            app.VelocityEditField = uieditfield(app.UIFigure, 'numeric');
+            app.VelocityEditField.Position = [1138 441 100 22];
+
+            % Create AccelerationEditFieldLabel
+            app.AccelerationEditFieldLabel = uilabel(app.UIFigure);
+            app.AccelerationEditFieldLabel.HorizontalAlignment = 'right';
+            app.AccelerationEditFieldLabel.Position = [1051 409 72 22];
+            app.AccelerationEditFieldLabel.Text = 'Acceleration';
+
+            % Create AccelerationEditField
+            app.AccelerationEditField = uieditfield(app.UIFigure, 'numeric');
+            app.AccelerationEditField.Position = [1138 409 100 22];
+
+            % Create SensorValueEditFieldLabel
+            app.SensorValueEditFieldLabel = uilabel(app.UIFigure);
+            app.SensorValueEditFieldLabel.HorizontalAlignment = 'right';
+            app.SensorValueEditFieldLabel.Position = [1046 348 77 22];
+            app.SensorValueEditFieldLabel.Text = 'Sensor Value';
+
+            % Create SensorValueEditField
+            app.SensorValueEditField = uieditfield(app.UIFigure, 'numeric');
+            app.SensorValueEditField.Position = [1138 348 100 22];
+
+            % Create DoorSwitchLabel
+            app.DoorSwitchLabel = uilabel(app.UIFigure);
+            app.DoorSwitchLabel.HorizontalAlignment = 'center';
+            app.DoorSwitchLabel.Position = [1379 620 32 22];
+            app.DoorSwitchLabel.Text = 'Door';
+
+            % Create DoorSwitch
+            app.DoorSwitch = uiswitch(app.UIFigure, 'rocker');
+            app.DoorSwitch.Position = [1384 678 20 45];
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = AppWSimulink
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @startupFcn)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end]]></w:t></w:r></w:p></w:body></w:document>
